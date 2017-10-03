@@ -2,13 +2,11 @@ const fs = require('fs')
 const path = require('path')
 const url = require('url')
 
-function getContentType (pathname) {
-  //TODO:This here
-  if(pathname.endsWith('.css')){
-    return 'text/css'
-  }
-  else if(pathname.endsWith('.jpg')){
-    return 'image/jpeg'
+function getContentType (url) {
+  if(url.endsWith('.css')) {
+    return'text/css'
+  } else if(url.endsWith('.ico')) {
+    return 'image/x-icon'
   }
 }
 
@@ -24,7 +22,7 @@ module.exports = (req,res) => {
         res.WriteHead(404,{
           'Content-Type':'text/plain'
         })
-        res.write('resourse not found!')
+        res.write('Resourse not found!')
         res.end()
         return
       }
