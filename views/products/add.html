@@ -15,6 +15,8 @@
         <ul>
             <li><a href="/">Home Page</a></li>
             <li><a href="/product/add">Add Product</a></li>
+            <li><a href="/category/add">Add Category</a></li>
+
         </ul>
     </nav>
 </header>
@@ -44,10 +46,14 @@
         </div>
 
         <div class="form-group">
+            <label for="group">Group</label>
+            {categories}
+        </div>
+
+        <div class="form-group">
             <input class="btn form-btn" type="submit" class="btn" value="Add">
         </div>
     </form>
-
 </main>
 <footer>
     <p>&copy; ShopStop</p>
