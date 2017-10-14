@@ -1329,7 +1329,7 @@ class Route {
     stack: Layer[];
 
     /**
-     * route handlers for various http methods
+     * route controllers for various http methods
      */
     methods: {
         [method: string]: boolean;
