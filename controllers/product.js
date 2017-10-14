@@ -4,16 +4,16 @@ const path = require('path')
 const Product = require('../models/Product')
 const Category = require('../models/Category')
 
-
-module.exports.addGet = (req,res) =>{
-      Category.find().then((categories) =>{
-        res.render('product/add', {categories: categories})
-    })
+module.exports.addGet = (req, res) => {
+  Category.find().then((categories) => {
+    res.render('product/add', {categories: categories})
+  })
 }
 
 module.exports.addPost = (req, res) => {
   let productObj = req.body
   productObj.image = '\\' + req.file.path
+  productObj.creator = req.user._id
 
   Product.create(productObj).then((product) => {
     Category.findById(product.category).then((category) => {
@@ -24,67 +24,75 @@ module.exports.addPost = (req, res) => {
   })
 }
 
-module.exports.editGet = (req, res) =>{
+module.exports.editGet = (req, res) => {
   let id = req.params.id
-  Product.findById(id).then(product =>{
-    if(!product){
+  Product.findById(id).then(product => {
+    if (!product) {
       res.sendStatus(404)
       return
     }
 
-    Category.find().then((categories) =>{
-      res.render('product/edit', {
-        product: product,
-        categories: categories
+    if(product.creator.equals(req.user._id) || req.user.roles.indexOf('Admin') >= 0) {
+      Category.find().then((categories) => {
+        res.render('product/edit', {
+          product: product,
+          categories: categories
+        })
       })
-    })
+    }else {
+      res.redirect(`/?error=${encodeURIComponent('You cannot edit this product!')}`)
+    }
   })
 }
 
-module.exports.editPost = (req, res) =>{
+module.exports.editPost = (req, res) => {
   let id = req.params.id
   let editedProduct = req.body
 
-  Product.findById(id).then((product) =>{
-    if(!product){
+  Product.findById(id).then((product) => {
+    if (!product) {
       res.redirect(
         `/?error=${encodeURIComponent('error=Product was not found!')}`
       )
       return
     }
 
-    product.name = editedProduct.name
-    product.description = editedProduct.description
-    product.price = editedProduct.price
+    if(product.creator.equals(req.user._id) || req.user.roles.indexOf('Admin') >= 0) {
+      product.name = editedProduct.name
+      product.description = editedProduct.description
+      product.price = editedProduct.price
 
-    if(req.file){
-      product.image = '\\' + req.file.path
-    }
-    //Check if the category is changed
-    if(product.category.toString() !== editedProduct.category){
-      //We find "current" and "next"
-      Category.findById(product.category).then((currentCategory) =>{
-        Category.findById(editedProduct.category).then((nextCategory) =>{
-          let index = currentCategory.products.indexOf(product._id)
-          if(index >= 0){
-            currentCategory.products.splice(index, 1)
-          }
-          currentCategory.save()
-          //Add prod ref to the new category
-          nextCategory.products.push(product._id)
-          nextCategory.save()
+      if (req.file) {
+        product.image = '\\' + req.file.path
+      }
+      //Check if the category is changed
+      if (product.category.toString() !== editedProduct.category) {
+        //We find "current" and "next"
+        Category.findById(product.category).then((currentCategory) => {
+          Category.findById(editedProduct.category).then((nextCategory) => {
+            let index = currentCategory.products.indexOf(product._id)
+            if (index >= 0) {
+              currentCategory.products.splice(index, 1)
+            }
+            currentCategory.save()
+            //Add prod ref to the new category
+            nextCategory.products.push(product._id)
+            nextCategory.save()
 
-          product.category = editedProduct.category
+            product.category = editedProduct.category
 
-          product.save().then(() =>{
-            res.redirect(`/?success= ${encodeURIComponent('Product was edited successfully!')}`)
+            product.save().then(() => {
+              res.redirect(`/?success= ${encodeURIComponent('Product was edited successfully!')}`)
+            })
           })
         })
-      })
+      } else {
+        product.save().then(() => {
+          res.redirect(`/?success= ${encodeURIComponent('Product was edited successfully!')}`)
+        })
+      }
     }else {
-      product.save().then(() => {
-        res.redirect(`/?success= ${encodeURIComponent('Product was edited successfully!')}`);
-      })
+      res.redirect(`/?error=${encodeURIComponent('You cannot edit this product!')}`)
     }
   })
 }
@@ -98,21 +106,40 @@ module.exports.deleteGet = (req, res) => {
       return
     }
 
-    res.render('product/delete', {product: product})
+    if(product.creator.equals(req.user._id) || req.user.roles.indexOf('Admin') >= 0) {
+      res.render('product/delete', {product: product})
+    } else {
+      res.redirect(`/?error=${encodeURIComponent('You cannot delete this product!')}`)
+    }
   })
 }
-module.exports.deletePost = (req, res) =>{
+
+module.exports.deletePost = (req, res) => {
   let id = req.params.id
 
-  Product.findByIdAndRemove(id).then((product) =>{
-    if(!product){
+  Product.findById(id).then((product) => {
+    if(!product) {
       res.redirect(`/?error=${encodeURIComponent('Product was not found!')}`)
       return
     }
 
-    fs.unlink(path.normalize(path.join('.', product.image)), () =>{
-      res.redirect(`/?success= ${encodeURIComponent('Product was deleted successfully!')}`)
-    })
+    if(product.creator.equals(req.user._id) || req.user.roles.indexOf('Admin') >= 0) {
+      Category.findById(product.category).then((category) => {
+        let index = category.products.indexOf(id)
+        if(index >= 0) {
+          category.products.splice(index, 1)
+        }
+        category.save()
+
+        Product.remove({_id: id}).then(() => {
+          fs.unlink(path.normalize(path.join('.', product.image)), () => {
+            res.redirect('/?success=' + encodeURIComponent('Product was deleted successfully'))
+          })
+        })
+      })
+    } else {
+      res.redirect(`/?error=${encodeURIComponent('You cannot delete this product!')}`)
+    }
   })
 }
 
@@ -129,3 +156,22 @@ module.exports.buyGet = (req, res) => {
   })
 }
 
+module.exports.buyPost = (req, res) => {
+  let productId = req.params.id
+
+  Product.findById(productId).then(product => {
+    if (product.buyer) {
+      let error = `error=${encodeURIComponent('Product was already bought!')}`
+      res.redirect(`/?${error}`)
+      return
+    }
+
+    product.buyer = req.user._id
+    product.save().then(() => {
+      req.user.boughtProducts.push(productId)
+      req.user.save().then(() => {
+        res.redirect('/')
+      })
+    })
+  })
+}
