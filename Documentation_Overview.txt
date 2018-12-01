@@ -1,1 +1,3 @@
 
+Used programming languages : Javascript (ECMAscrypt 6), HTML 5, CSS3.
+Used programming technologies : NodeJS, MongoDB, Mongoose, PugJS, Custom Front End Template. 
