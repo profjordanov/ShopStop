@@ -4,7 +4,9 @@
 
 1. Clone the repo.
 2. run npm install as admin in the folder directory of the app (Nodejs required!)
-3. start index.js 
+3. run node index.js (or nodemon index.js) in the folder directory of the app
+   example: D:\Software\ShopStop
+4. Open web browser and go to http://localhost:3003/
 
  ||Functionality
 •	User Login
