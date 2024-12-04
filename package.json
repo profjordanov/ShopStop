@@ -15,9 +15,9 @@
   "license": "MIT",
   "dependencies": {
     "body-parser": "1.20.1",
-    "cookie-parser": "1.4.3",
-    "express": "4.19.2",
-    "express-session": "1.15.6",
+    "cookie-parser": "1.4.7",
+    "express": "4.21.1",
+    "express-session": "1.18.1",
     "gulp": "5.0.0",
     "gulp-clean-css": "3.10.0",
     "gulp-rename": "1.2.2",
